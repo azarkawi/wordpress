@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  namespace: apache-php
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      securityContext:
+        fsGroup: 33
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:33 /mnt/uploads"]
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /mnt/uploads
+      containers:
+      - name: wordpress
+        image: abdallah013/wordpress:v1.a
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: "mariadb-service:3306"
+        - name: WORDPRESS_DB_NAME
+          value: "wordpress"
+        - name: WORDPRESS_DB_USER
+          value: "root"
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_ROOT_PASSWORD
+        ports:
+        - containerPort: 80
+        - containerPort: 22
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /var/www/html/wp-content/uploads
+        - name: plugins-storage
+          mountPath: /var/www/html/wp-content/plugins
+        - name: themes-storage
+          mountPath: /var/www/html/wp-content/themes
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: plugins-storage
+        persistentVolumeClaim:
+          claimName: plugins-pvc
+      - name: themes-storage
+        persistentVolumeClaim:
+          claimName: themes-pvc
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+  namespace: apache-php
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: ssh
+      port: 22
+      targetPort: 22
+  selector:
+    app: wordpress
+  type: NodePort
