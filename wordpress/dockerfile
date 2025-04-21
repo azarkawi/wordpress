@@ -1,0 +1,26 @@
+FROM wordpress:php8.2-apache
+
+# Install SSH, nano, curl, sudo, and WP-CLI
+RUN apt-get update && \
+
+    apt-get install -y openssh-server nano curl sudo && \
+    mkdir /var/run/sshd && \
+
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+    chmod +x wp-cli.phar && \
+    mv wp-cli.phar /usr/local/bin/wp
+
+# Create user
+RUN useradd -m -d /home/sftpuser -s /bin/bash sftpuser &&\
+
+    mkdir -p /home/sftpuser/.ssh && \
+    echo "sftpuser:password" | chpasswd
+
+# Modify SSH config to allow password authentication
+RUN sed -i 's/#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Open port 22 for SSH
+EXPOSE 22
+
+# Start both Apache and SSH when the container runs
+CMD ["sh", "-c", "docker-entrypoint.sh apache2-foreground & service ssh start && wait"]
