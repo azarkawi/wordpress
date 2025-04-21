@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wordpress-deployment
-  namespace: apache-php
+  namespace: wordpress
 spec:
   replicas: 1
   selector:
@@ -70,7 +70,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wordpress-service
-  namespace: apache-php
+  namespace: wordpress
 spec:
   ports:
     - name: http
