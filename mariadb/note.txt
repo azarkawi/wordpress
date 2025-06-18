@@ -1,0 +1,6 @@
+wordpress database in mariadb:
+kubectl exec -it mariadb-deployment-****  -n apache-php -- /bin/bash
+apt-get install mysql-client
+mysql -u root -p
+CREATE DATABASE wordpress;.
+SHOW DATABASES;
