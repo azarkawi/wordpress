@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mariadb-backup
+  namespace: apache-php
+spec:
+  schedule: "0 * * * *"  # Elke uur
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mariadb-backup
+            image: mysql:latest  # Change the image to mysql:latest
+            command:
+              - "/bin/sh"
+              - "-c"
+              - "mysqldump -u root -p$MYSQL_ROOT_PASSWORD -h mariadb-service -P 3306 wordpress > /backup/backup.sql"
+            env:
+              - name: MYSQL_ROOT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mariadb-secret
+                    key: MYSQL_ROOT_PASSWORD
+            volumeMounts:
+              - name: backup-volume
+                mountPath: /backup
+          volumes:
+            - name: backup-volume
+              persistentVolumeClaim:
+                claimName: mariadb-backup-pvc
+          restartPolicy: OnFailure
+#kubectl get job -n apache-php
+#kubectl create job --from=cronjob/mariadb-backup -n apache-php mariadb-backup-manual
