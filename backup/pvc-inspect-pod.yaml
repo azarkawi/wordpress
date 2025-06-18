@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-inspect-pod
+  namespace: apache-php
+spec:
+  containers:
+    - name: pvc-inspect
+      image: busybox
+      command:
+        - "sleep"
+        - "3600"
+      volumeMounts:
+        - mountPath: /mnt
+          name: mariadb-backup-volume
+  volumes:
+    - name: mariadb-backup-volume
+      persistentVolumeClaim:
+        claimName: mariadb-backup-pvc
+
+# kubectl apply -f pvc-inspect-pod.yaml
+# kubectl exec -it pvc-inspect-pod -n apache-php -- ls /mnt
+# kubectl exec -it pvc-inspect-pod -n apache-php -- /bin/sh
